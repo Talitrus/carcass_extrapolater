@@ -16,7 +16,7 @@ A simple Shiny application for determining sampling requirements for Parentage-B
 
 2. Run the app by running this command in R:
 ```r
-shiny::runGithub("Talitrus/carcass_extrapolater")
+shiny::runGitHub("Talitrus/carcass_extrapolater")
 ```
 
 ## Model Logic
