@@ -5,6 +5,7 @@ A simple Shiny application for determining sampling requirements for Parentage-B
 ## Features
 - **Total Adult Run Size Input**: Define the total estimated population of adult salmon.
 - **Target Identifiable Offspring Slider**: Set the target percentage of offspring you wish to be able to identify via PBT.
+- **Pre-spawn Mortality Slider**: Account for adults that die before spawning and don't contribute to offspring.
 - **Genotyping Success Rate Slider**: Account for samples that fail to genotype. The app automatically scales up the required collection effort.
 
 ## How to Run

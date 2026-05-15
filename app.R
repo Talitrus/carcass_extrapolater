@@ -22,10 +22,11 @@ ui <- page_navbar(
         title = "Parameters",
         width = 350,
         numericInput("run_size", "Total Adult Run Size", value = 1000, min = 1),
+        sliderInput("psm", "Pre-spawn Mortality (%)", min = 0, max = 100, value = 5, step = 1),
         sliderInput("target_pj", "Target Identifiable Offspring (%)", min = 0, max = 100, value = 50, step = 1),
         sliderInput("geno_success", "Genotyping Success Rate (%)", min = 1, max = 100, value = 50, step = 1),
         hr(),
-        helpText("Calculates the required collection fraction and number of carcasses to sample to achieve the target probability of identifying a juvenile (P_j), factoring in genotyping success.")
+        helpText("Calculates the required collection fraction and number of carcasses to sample to achieve the target probability of identifying a juvenile (P_j), factoring in genotyping success and pre-spawn mortality.")
       ),
       
       uiOutput("warning_msg"),
@@ -33,7 +34,7 @@ ui <- page_navbar(
       layout_columns(
         col_widths = c(6, 6),
         value_box(
-          title = "Theoretical Minimum Collection Fraction",
+          title = "Total Collection Fraction",
           value = textOutput("samp_frac"),
           showcase = bsicons::bs_icon("pie-chart"),
           theme = "secondary"
@@ -45,6 +46,8 @@ ui <- page_navbar(
           theme = "primary"
         )
       ),
+      
+      uiOutput("breakdown_msg"),
       
       card(
         card_header("Collection Fraction Curve"),
@@ -60,6 +63,7 @@ server <- function(input, output, session) {
     # Convert percentages to proportions
     pj <- input$target_pj / 100
     success_rate <- input$geno_success / 100
+    psm_rate <- input$psm / 100
     
     # Required successful sampling fraction (p)
     p_success <- 1 - sqrt(1 - pj)
@@ -67,8 +71,17 @@ server <- function(input, output, session) {
     # Required collection fraction (accounting for failure rate)
     p_collection <- p_success / success_rate
     
-    # Calculate total carcasses needed to collect
+    # Effective spawning population
+    effective_spawners <- input$run_size * (1 - psm_rate)
+    
+    # Calculate total carcasses needed to collect (mathematically, PSM cancels out here!)
+    # C_spawn = p_collection * N_spawn
+    # C_total = C_spawn / (1 - psm_rate) = p_collection * N_spawn / (1 - psm_rate) = p_collection * N
     carcasses <- ceiling(p_collection * input$run_size)
+    
+    # Calculate the breakdown of the collected carcasses
+    collected_psm <- round(carcasses * psm_rate)
+    collected_spawners <- carcasses - collected_psm
     
     is_possible <- p_collection <= 1
     
@@ -76,6 +89,8 @@ server <- function(input, output, session) {
       p_success = p_success,
       p_collection = p_collection,
       carcasses = carcasses,
+      collected_psm = collected_psm,
+      collected_spawners = collected_spawners,
       is_possible = is_possible
     )
   })
@@ -107,6 +122,22 @@ server <- function(input, output, session) {
       return("N/A")
     }
     format(res$carcasses, big.mark = ",")
+  })
+  
+  output$breakdown_msg <- renderUI({
+    res <- results()
+    if (res$is_possible) {
+      p(
+        class = "text-muted",
+        style = "margin-top: -10px; font-size: 0.9em; text-align: center;",
+        sprintf(
+          "Of the %s total carcasses collected, we expect %s to be successful spawners and %s to be pre-spawn mortalities.",
+          format(res$carcasses, big.mark = ","),
+          format(res$collected_spawners, big.mark = ","),
+          format(res$collected_psm, big.mark = ",")
+        )
+      )
+    }
   })
   
   output$curve_plot <- renderPlot({
