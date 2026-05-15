@@ -34,7 +34,7 @@ ui <- page_navbar(
       layout_columns(
         col_widths = c(6, 6),
         value_box(
-          title = "Total Collection Fraction",
+          title = "Total Collection Fraction Required",
           value = textOutput("samp_frac"),
           showcase = bsicons::bs_icon("pie-chart"),
           theme = "secondary"
